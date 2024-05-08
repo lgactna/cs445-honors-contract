@@ -5,6 +5,7 @@ plotly
 python-dateutil
 networkx
 pandas
+gunicorn
 
 # Linting
 black
