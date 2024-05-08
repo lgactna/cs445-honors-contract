@@ -9,6 +9,8 @@ import plotly.graph_objects as go
 import networkx as nx
 import plotly
 
+import global_state
+
 DEFAULT_FIGURE_LAYOUT = go.Layout(
     showlegend=False,
     hovermode="closest",
@@ -21,6 +23,7 @@ DEFAULT_FIGURE_LAYOUT = go.Layout(
 
 def create_figure_from_graph(
     graph: nx.Graph,
+    positions = None,
     layout: Callable[..., dict[int, tuple[float, float]]] = nx.spring_layout,
     figure_layout: go.Layout = DEFAULT_FIGURE_LAYOUT,
 ) -> plotly.graph_objs.Figure:
@@ -33,7 +36,8 @@ def create_figure_from_graph(
     #
     # For pretty much every other graph, we have to do the positioning of nodes
     # ourselves. In turn, we use a layout callable.
-    positions = layout(graph)
+    if not positions:
+        positions = layout(graph)
 
     # Create edge listing
     edge_x = []
@@ -250,39 +254,68 @@ def color_nodes_by_adjacency(graph: nx.Graph, fig: plotly.graph_objs.Figure) -> 
     
     return fig
 
-def rebuild_node_sampling_paths(graph: nx.Graph, fig: plotly.graph_objs.Figure) -> plotly.graph_objs.Figure:
+def rebuild_node_sampling_paths(graph: nx.Graph, fig: plotly.graph_objs.Figure, victim_node: int) -> plotly.graph_objs.Figure:
     """
     Perform path reconstruction according to the node sampling algorithm.
     
     For obvious reasons, this will give you a rather inaccurate representation
     of how things actually work.
     
-    You should call this after coloring the nodes by the times_marked property.
+    You should call this after coloring the nodes.
     """
     # Copy the figure
     fig_2 = copy.deepcopy(fig)
     
     # First, destroy the edges currently present in the figure by outright
-    # removing the edge traces on the original figure
-    fig.get('data', [])
-    
-    for i, trace in enumerate(fig['data']):
+    # removing the edge traces on the original figure (more accurately,
+    # hiding them since this apparently isn't really all that easy)
+    for i, trace in enumerate(fig.data):
         if 'name' in trace and trace['name'] == 'edge_trace':
-            fig_2['data'][i].clear()
+            fig_2.data[i].visible = False
     
     # Now perform the path reconstruction exactly as stated by the paper
     counts = {}
     for node in graph.nodes():
-        counts[node] = node['times_marked']
+        # print(f"{node=}, {graph.nodes[node]['times_marked']=}")
+        if graph.nodes[node]['times_marked'] != 0:
+            counts[node] = graph.nodes[node]['times_marked']
     counts = {k: v for k, v in sorted(counts.items(), key=lambda item: item[1])}
     
-    # Draw edges according to the order of keys (node indices) in `counts`
-    
-    # Create the new scatterplot
+    # Draw edges according to the order of keys (node indices) in `counts`, 
+    # including one edge to the victim node from the most frequent node
+    ordered_nodes = [victim_node] + list(counts.keys())
+    edge_x = []
+    edge_y = []
+    for i in range(len(ordered_nodes)-1):
+        a = ordered_nodes[i]
+        b = ordered_nodes[i+1]
+        
+        # print(f"{a=}, {b=}")
+        
+        x0, y0 = global_state.POSITIONS[a]
+        x1, y1 = global_state.POSITIONS[b]
+        edge_x.append(x0)
+        edge_x.append(x1)
+        edge_x.append(None)
+        edge_y.append(y0)
+        edge_y.append(y1)
+        edge_y.append(None)
+        
+    # Generate a scatter plot composed of only the edges.
+    edge_trace = go.Scatter(
+        name="node_sampling_edge_trace",
+        x=edge_x,
+        y=edge_y,
+        line=dict(width=0.5, color="#888"),
+        hoverinfo="none",
+        mode="lines",
+    )
     
     # Add the new trace to the figure
+    fig_2.add_trace(edge_trace)
     
     # Return
+    return fig_2
     
     
     

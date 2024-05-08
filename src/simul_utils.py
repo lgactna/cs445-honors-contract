@@ -129,7 +129,7 @@ def simulate_transmissions(
         # all cases.
         saved_router: int | None = None
         
-        for idx, node in enumerate(path[1:-1], 1):
+        for idx, node in enumerate(path[0:-1], 0):
             # yes, all redundant, but a little nicer
             graph.nodes[node]["times_used"] += 1
             graph.edges[path[idx], path[idx+1]]["times_used"] += 1

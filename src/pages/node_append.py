@@ -57,7 +57,8 @@ layout = html.Div(
                                     ],
                                     label="Reconstructed path to attackers"
                                 )
-                            ]
+                            ],
+                            id="tabs-nappend"
                         )
                     ],
                     width=12,
