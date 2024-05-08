@@ -271,34 +271,32 @@ def rebuild_node_append_paths(graph: nx.Graph, fig: plotly.graph_objs.Figure, vi
         if 'name' in trace and trace['name'] == 'edge_trace':
             fig_2.data[i].visible = False
     
-    # Now perform the path reconstruction exactly as stated by the paper
-    counts = {}
-    for node in graph.nodes():
-        # print(f"{node=}, {graph.nodes[node]['times_marked']=}")
-        if graph.nodes[node]['times_used'] != 0:
-            counts[node] = graph.nodes[node]['times_used']
-    counts = {k: v for k, v in sorted(counts.items(), key=lambda item: item[1])}
-    
-    # Draw edges according to the order of keys (node indices) in `counts`, 
-    # including one edge to the victim node from the most frequent node
-    ordered_nodes = list(counts.keys()) + [victim_node]
+    # Perform a simple reconstruction of the edges; also check for any neighbors
+    # with nonzero use times
     edge_x = []
     edge_y = []
-    for i in range(len(ordered_nodes)-1):
-        a = ordered_nodes[i]
-        b = ordered_nodes[i+1]
-        
-        # print(f"{a=}, {b=}")
-        
-        x0, y0 = positions[a]
-        x1, y1 = positions[b]
-        edge_x.append(x0)
-        edge_x.append(x1)
-        edge_x.append(None)
-        edge_y.append(y0)
-        edge_y.append(y1)
-        edge_y.append(None)
-        
+    for a, b in graph.edges():
+        if graph.edges[a, b]['times_used'] != 0:
+            x0, y0 = positions[a]
+            x1, y1 = positions[b]
+            edge_x.append(x0)
+            edge_x.append(x1)
+            edge_x.append(None)
+            edge_y.append(y0)
+            edge_y.append(y1)
+            edge_y.append(None)
+            
+    for node in graph.neighbors(victim_node):
+        if graph.nodes[node]["times_used"] != 0:
+            x0, y0 = positions[victim_node]
+            x1, y1 = positions[node]
+            edge_x.append(x0)
+            edge_x.append(x1)
+            edge_x.append(None)
+            edge_y.append(y0)
+            edge_y.append(y1)
+            edge_y.append(None)
+
     # Generate a scatter plot composed of only the edges.
     edge_trace = go.Scatter(
         name="node_append_edge_trace",
