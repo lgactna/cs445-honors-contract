@@ -89,4 +89,5 @@ app.layout = generate_container()
 
 if __name__ == "__main__":    
     debug = os.getenv('DEBUG', 'True') == 'True'
-    app.run_server(debug=debug)
+    port = int(os.getenv('PORT', '80'))
+    app.run_server(debug=debug, port=port)
