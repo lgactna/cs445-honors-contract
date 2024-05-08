@@ -148,7 +148,7 @@ def update_output(
     fig = graph_utils.color_nodes_by_property(result.graph, fig, "times_used")
     fig_2 = copy.deepcopy(fig)
     fig_2 = graph_utils.color_nodes_by_property(result.graph, fig_2, "times_marked")
-    fig_2 = graph_utils.rebuild_node_sampling_paths(result.graph, fig_2, victim_node)
+    fig_2 = graph_utils.rebuild_node_sampling_paths(result.graph, fig_2, victim_node, global_state.POSITIONS)
     
     # Spit out the simulation results. Select only the node ID and the times
     # it was marked in a packet.

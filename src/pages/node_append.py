@@ -144,7 +144,7 @@ def update_output(
     fig = graph_utils.color_nodes_by_property(result.graph, fig, "times_used")
     fig_2 = copy.deepcopy(fig)
     fig_2 = graph_utils.color_nodes_by_role(result.graph, fig_2, victim_node, attackers)
-    fig_2 = graph_utils.rebuild_node_append_paths(result.graph, fig_2, victim_node)
+    fig_2 = graph_utils.rebuild_node_append_paths(result.graph, fig_2, victim_node, global_state.POSITIONS)
     
     # Spit out the simulation results.
     res = dedent(

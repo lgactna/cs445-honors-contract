@@ -9,8 +9,6 @@ import plotly.graph_objects as go
 import networkx as nx
 import plotly
 
-import global_state
-
 DEFAULT_FIGURE_LAYOUT = go.Layout(
     showlegend=False,
     hovermode="closest",
@@ -254,7 +252,7 @@ def color_nodes_by_adjacency(graph: nx.Graph, fig: plotly.graph_objs.Figure) -> 
     
     return fig
 
-def rebuild_node_append_paths(graph: nx.Graph, fig: plotly.graph_objs.Figure, victim_node: int) -> plotly.graph_objs.Figure:
+def rebuild_node_append_paths(graph: nx.Graph, fig: plotly.graph_objs.Figure, victim_node: int, positions: list[Tuple[float, float]]) -> plotly.graph_objs.Figure:
     """
     Perform path reconstruction according to the node sampling algorithm.
     
@@ -292,8 +290,8 @@ def rebuild_node_append_paths(graph: nx.Graph, fig: plotly.graph_objs.Figure, vi
         
         # print(f"{a=}, {b=}")
         
-        x0, y0 = global_state.POSITIONS[a]
-        x1, y1 = global_state.POSITIONS[b]
+        x0, y0 = positions[a]
+        x1, y1 = positions[b]
         edge_x.append(x0)
         edge_x.append(x1)
         edge_x.append(None)
@@ -317,7 +315,7 @@ def rebuild_node_append_paths(graph: nx.Graph, fig: plotly.graph_objs.Figure, vi
     # Return
     return fig_2
 
-def rebuild_node_sampling_paths(graph: nx.Graph, fig: plotly.graph_objs.Figure, victim_node: int) -> plotly.graph_objs.Figure:
+def rebuild_node_sampling_paths(graph: nx.Graph, fig: plotly.graph_objs.Figure, victim_node: int, positions: list[Tuple[float, float]]) -> plotly.graph_objs.Figure:
     """
     Perform path reconstruction according to the node append algorithm.
     
@@ -352,8 +350,8 @@ def rebuild_node_sampling_paths(graph: nx.Graph, fig: plotly.graph_objs.Figure, 
         
         # print(f"{a=}, {b=}")
         
-        x0, y0 = global_state.POSITIONS[a]
-        x1, y1 = global_state.POSITIONS[b]
+        x0, y0 = positions[a]
+        x1, y1 = positions[b]
         edge_x.append(x0)
         edge_x.append(x1)
         edge_x.append(None)
@@ -377,7 +375,7 @@ def rebuild_node_sampling_paths(graph: nx.Graph, fig: plotly.graph_objs.Figure, 
     # Return
     return fig_2
 
-def rebuild_edge_sampling_paths(graph: nx.Graph, fig: plotly.graph_objs.Figure, victim_node: int) -> plotly.graph_objs.Figure:
+def rebuild_edge_sampling_paths(graph: nx.Graph, fig: plotly.graph_objs.Figure, victim_node: int, positions: list[Tuple[float, float]]) -> plotly.graph_objs.Figure:
     """
     Perform path reconstruction according to the node sampling algorithm.
     
@@ -402,8 +400,8 @@ def rebuild_edge_sampling_paths(graph: nx.Graph, fig: plotly.graph_objs.Figure, 
     edge_y = []
     for a, b in graph.edges():
         if graph.edges[a, b]['times_marked'] != 0:
-            x0, y0 = global_state.POSITIONS[a]
-            x1, y1 = global_state.POSITIONS[b]
+            x0, y0 = positions[a]
+            x1, y1 = positions[b]
             edge_x.append(x0)
             edge_x.append(x1)
             edge_x.append(None)
