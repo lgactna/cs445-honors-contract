@@ -24,7 +24,7 @@ def generate_options():
     return dbc.Form(
         [
             dbc.Label("Packets to send", html_for="slider-nappend-packets"),   
-            dcc.Slider(0, 100000, 100, value=5000, id='slider-nappend-packets', marks=None, tooltip={"placement": "bottom", "always_visible": True}),
+            dcc.Slider(0, 5000, 10, value=100, id='slider-nappend-packets', marks=None, tooltip={"placement": "bottom", "always_visible": True}),
             dbc.Label("Index of victim node", html_for="slider-nappend-victim"),   
             dcc.Slider(0, global_state.GRAPH_PARAMETERS.n-1, 1, value=0, id='slider-nappend-victim', marks=None, tooltip={"placement": "bottom", "always_visible": True}),
             dbc.Label("Indices of attackers", html_for="dropdown-nappend-attackers"), 
@@ -36,7 +36,6 @@ def generate_options():
             )
         ]
     )
-    
 
 layout = html.Div(
     [
@@ -53,7 +52,9 @@ layout = html.Div(
                                     label="Base graph"
                                 ),
                                 dbc.Tab(
-                                    dbc.Spinner(dcc.Graph(id="graph-nappend-new")),
+                                    [
+                                        dbc.Spinner(dcc.Graph(id="graph-nappend-new"))
+                                    ],
                                     label="Reconstructed path to attackers"
                                 )
                             ]
@@ -102,6 +103,7 @@ def update_dummy(_):
 
 @callback(
     Output("graph-nappend-base", "figure"),
+    Output("graph-nappend-new", "figure"),
     Output("md-nappend-results", "children"),
     Input("slider-nappend-victim", 'value'),
     Input("dropdown-nappend-attackers", 'value'),
@@ -112,6 +114,7 @@ def update_output(
     attackers: list[str],
     packets: int
 ) -> Tuple[
+    plotly.graph_objs.Figure,
     plotly.graph_objs.Figure,
     str
 ]:
@@ -138,6 +141,8 @@ def update_output(
     
     # Color the copy of the figure based on the simulation results.
     fig = graph_utils.color_nodes_by_property(result.graph, fig, "times_used")
+    fig_2 = copy.deepcopy(fig)
+    fig_2 = graph_utils.color_nodes_by_role(result.graph, fig_2, victim_node, attackers)
     
     # Spit out the simulation results.
     res = dedent(
@@ -145,7 +150,17 @@ def update_output(
         - Number of packets sent: {result.packets_sent}
         - Total number of intermediate routers: {result.intermediate_routers}
         - Additional bytes of overhead: {result.nappend_overhead}
+        
+        ---
+        
+        The reconstructed graph for node appending can be viewed by clicking on
+        "Reconstructed path to attackers" on the left. Elements are colored
+        as follows:
+        - **Blue** is the victim node.
+        - **Red** are attacker nodes.
+        - **White** nodes are routers on at least one path to from an attacker to the victim.
+        - **Gray** nodes are routers not involved in routing attacker traffic.
         """
     ).strip()
     
-    return fig, res
+    return fig, fig_2, res
