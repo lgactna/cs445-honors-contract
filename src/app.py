@@ -69,7 +69,7 @@ def generate_container() -> html.Div:
 
     sidebar = html.Div(
         [
-            html.P("DDoS Traceback Explorer", className="display-6"),
+            html.P("Traceback Explorer", className="display-6"),
             html.Hr(),
             html.Div(nv),
         ],

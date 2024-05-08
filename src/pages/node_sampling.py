@@ -4,7 +4,7 @@ from dash import html, Input, Output, callback
 
 # This is registered as the homepage with path `/`, else accessing the server
 # yields a 404 until you click on one of the pages
-dash.register_page(__name__, path="/", name="Node sampling", group="Simulations")
+dash.register_page(__name__, name="Node sampling", group="Simulations", order=1)
 
 layout = html.Div(
     [
@@ -40,12 +40,3 @@ layout = html.Div(
         ),
     ]
 )
-
-
-@callback(
-    Output("request-result", "children"),
-    Input("request-global-update-btn", "n_clicks"),
-    prevent_initial_call=True,
-)
-def update_output(_) -> str:
-    return str(_)

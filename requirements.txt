@@ -3,6 +3,7 @@ dash
 dash-bootstrap-components
 plotly
 python-dateutil
+networkx
 
 # Linting
 black
