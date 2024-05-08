@@ -91,9 +91,9 @@ def create_figure_from_graph(
             color=[],
             size=10,
             line_width=2,
-            colorbar=dict(
-                titleside='right'
-            )
+            # colorbar=dict(
+            #     titleside='right'
+            # )
         ),
     )
 
@@ -199,7 +199,7 @@ def color_nodes_by_property(graph: nx.Graph, fig: plotly.graph_objs.Figure, prop
                     "title": property,
                     "thickness":15,
                     "xanchor":"left",
-                    "titleside":"right",
+                    # "titleside":"right",
                 }
             },
             "hovertemplate": f"%{{text}}",
@@ -245,7 +245,7 @@ def color_nodes_by_adjacency(graph: nx.Graph, fig: plotly.graph_objs.Figure) -> 
                     "title": "Number of connections",
                     "thickness": 15,
                     "xanchor":"left",
-                    "titleside":"right",
+                    # "titleside":"right",
                 }
             }
         },
@@ -254,12 +254,72 @@ def color_nodes_by_adjacency(graph: nx.Graph, fig: plotly.graph_objs.Figure) -> 
     
     return fig
 
-def rebuild_node_sampling_paths(graph: nx.Graph, fig: plotly.graph_objs.Figure, victim_node: int) -> plotly.graph_objs.Figure:
+def rebuild_node_append_paths(graph: nx.Graph, fig: plotly.graph_objs.Figure, victim_node: int) -> plotly.graph_objs.Figure:
     """
     Perform path reconstruction according to the node sampling algorithm.
     
     For obvious reasons, this will give you a rather inaccurate representation
     of how things actually work.
+    
+    You should call this after coloring the nodes.
+    """
+    # Copy the figure
+    fig_2 = copy.deepcopy(fig)
+    
+    # First, destroy the edges currently present in the figure by outright
+    # removing the edge traces on the original figure (more accurately,
+    # hiding them since this apparently isn't really all that easy)
+    for i, trace in enumerate(fig.data):
+        if 'name' in trace and trace['name'] == 'edge_trace':
+            fig_2.data[i].visible = False
+    
+    # Now perform the path reconstruction exactly as stated by the paper
+    counts = {}
+    for node in graph.nodes():
+        # print(f"{node=}, {graph.nodes[node]['times_marked']=}")
+        if graph.nodes[node]['times_used'] != 0:
+            counts[node] = graph.nodes[node]['times_used']
+    counts = {k: v for k, v in sorted(counts.items(), key=lambda item: item[1])}
+    
+    # Draw edges according to the order of keys (node indices) in `counts`, 
+    # including one edge to the victim node from the most frequent node
+    ordered_nodes = list(counts.keys()) + [victim_node]
+    edge_x = []
+    edge_y = []
+    for i in range(len(ordered_nodes)-1):
+        a = ordered_nodes[i]
+        b = ordered_nodes[i+1]
+        
+        # print(f"{a=}, {b=}")
+        
+        x0, y0 = global_state.POSITIONS[a]
+        x1, y1 = global_state.POSITIONS[b]
+        edge_x.append(x0)
+        edge_x.append(x1)
+        edge_x.append(None)
+        edge_y.append(y0)
+        edge_y.append(y1)
+        edge_y.append(None)
+        
+    # Generate a scatter plot composed of only the edges.
+    edge_trace = go.Scatter(
+        name="node_append_edge_trace",
+        x=edge_x,
+        y=edge_y,
+        line=dict(width=0.5, color="#888"),
+        hoverinfo="none",
+        mode="lines",
+    )
+    
+    # Add the new trace to the figure
+    fig_2.add_trace(edge_trace)
+    
+    # Return
+    return fig_2
+
+def rebuild_node_sampling_paths(graph: nx.Graph, fig: plotly.graph_objs.Figure, victim_node: int) -> plotly.graph_objs.Figure:
+    """
+    Perform path reconstruction according to the node append algorithm.
     
     You should call this after coloring the nodes.
     """
@@ -303,7 +363,7 @@ def rebuild_node_sampling_paths(graph: nx.Graph, fig: plotly.graph_objs.Figure, 
         
     # Generate a scatter plot composed of only the edges.
     edge_trace = go.Scatter(
-        name="node_sampling_edge_trace",
+        name="node_appending_edge_trace",
         x=edge_x,
         y=edge_y,
         line=dict(width=0.5, color="#888"),
@@ -316,8 +376,53 @@ def rebuild_node_sampling_paths(graph: nx.Graph, fig: plotly.graph_objs.Figure, 
     
     # Return
     return fig_2
+
+def rebuild_edge_sampling_paths(graph: nx.Graph, fig: plotly.graph_objs.Figure, victim_node: int) -> plotly.graph_objs.Figure:
+    """
+    Perform path reconstruction according to the node sampling algorithm.
     
+    You should call this after coloring the nodes.
+    """
+    # Copy the figure
+    fig_2 = copy.deepcopy(fig)
     
+    # First, destroy the edges currently present in the figure by outright
+    # removing the edge traces on the original figure (more accurately,
+    # hiding them since this apparently isn't really all that easy)
+    for i, trace in enumerate(fig.data):
+        if 'name' in trace and trace['name'] == 'edge_trace':
+            fig_2.data[i].visible = False
     
+    # Now perform the path reconstruction. Because our graphs are inherently
+    # acyclic (since the shortest path calculation will be deterministic for
+    # any two points in the graph, since the graph doesn't change halfway),
+    # there is no need to remove edges of incorrect distance or assert acylic
+    # cycles.
+    edge_x = []
+    edge_y = []
+    for a, b in graph.edges():
+        if graph.edges[a, b]['times_marked'] != 0:
+            x0, y0 = global_state.POSITIONS[a]
+            x1, y1 = global_state.POSITIONS[b]
+            edge_x.append(x0)
+            edge_x.append(x1)
+            edge_x.append(None)
+            edge_y.append(y0)
+            edge_y.append(y1)
+            edge_y.append(None)
+        
+    # Generate a scatter plot composed of only the edges.
+    edge_trace = go.Scatter(
+        name="edge_sampling_edge_trace",
+        x=edge_x,
+        y=edge_y,
+        line=dict(width=0.5, color="#888"),
+        hoverinfo="none",
+        mode="lines",
+    )
     
+    # Add the new trace to the figure
+    fig_2.add_trace(edge_trace)
     
+    # Return
+    return fig_2

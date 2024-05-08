@@ -150,21 +150,18 @@ def update_output(
     fig_2 = graph_utils.color_nodes_by_property(result.graph, fig_2, "times_marked")
     fig_2 = graph_utils.rebuild_node_sampling_paths(result.graph, fig_2, victim_node)
     
-    # Spit out the simulation results.
-    # FIXME: This is great for the next one! Not for this one, because we need
-    # just the nodes, not the edge properties.
-    # See https://stackoverflow.com/questions/35046087/make-networkx-node-attributes-into-pandas-dataframe-columns
-    # df: pd.DataFrame = nx.to_pandas_edgelist(result.graph)
+    # Spit out the simulation results. Select only the node ID and the times
+    # it was marked in a packet.
     df = pd.DataFrame.from_dict(dict(result.graph.nodes(data=True)), orient='index')
     df['node_id'] = df.index
-    df = df[['node_id', 'times_marked']]
+    df = df[['node_id', 'times_marked', 'times_used']]
     df = df.sort_values("times_marked", ascending=False)
     
     md_str = dedent(
         f"""
         - Number of packets sent: {result.packets_sent}
         - Total number of intermediate routers: {result.intermediate_routers}
-        - Additional bytes of overhead: {result.nsample_overhead}
+        - Additional bytes of overhead (naive implementation): {result.nsample_overhead}
         
         The reconstructed graph for node appending can be viewed by clicking on
         "Reconstructed path to attackers" on the left. The reconstructed node
