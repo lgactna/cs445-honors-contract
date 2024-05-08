@@ -1,5 +1,6 @@
 import logging
 import sys
+import os
 
 import dash
 from dash import html
@@ -17,6 +18,8 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], use_pages=True)
+server = app.server
 
 def generate_container() -> html.Div:
     """
@@ -82,10 +85,8 @@ def generate_container() -> html.Div:
 
     return html.Div([sidebar, content])
 
+app.layout = generate_container()
 
-if __name__ == "__main__":
-    app = dash.Dash(
-        __name__, external_stylesheets=[dbc.themes.BOOTSTRAP], use_pages=True
-    )
-    app.layout = generate_container()
-    app.run_server(debug=True)
+if __name__ == "__main__":    
+    debug = os.getenv('DEBUG', 'True') == 'True'
+    app.run_server(debug=debug)
