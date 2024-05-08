@@ -283,7 +283,7 @@ def rebuild_node_sampling_paths(graph: nx.Graph, fig: plotly.graph_objs.Figure, 
     
     # Draw edges according to the order of keys (node indices) in `counts`, 
     # including one edge to the victim node from the most frequent node
-    ordered_nodes = [victim_node] + list(counts.keys())
+    ordered_nodes = list(counts.keys()) + [victim_node]
     edge_x = []
     edge_y = []
     for i in range(len(ordered_nodes)-1):

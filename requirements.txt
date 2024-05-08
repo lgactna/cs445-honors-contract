@@ -4,6 +4,7 @@ dash-bootstrap-components
 plotly
 python-dateutil
 networkx
+pandas
 
 # Linting
 black

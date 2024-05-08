@@ -3,6 +3,7 @@ import copy
 
 from dash import html, Input, Output, callback, dcc
 from typing import Callable, Tuple
+import pandas as pd
 import dash
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
@@ -32,7 +33,9 @@ def generate_options():
             ['1'],
             multi=True,
             id="dropdown-nsample-attackers"
-            )
+            ),
+            dbc.Label("Marking probability (p)", html_for="slider-nsample-p"),   
+            dcc.Slider(0, 1, 0.01, value=0.5, id='slider-nsample-p', marks=None, tooltip={"placement": "bottom", "always_visible": True}),
         ]
     )
 
@@ -73,15 +76,15 @@ layout = html.Div(
                                         html.Div(generate_options(), id="nsample-options-dummy")
                                     ],
                                     width=12,
-                                    style={"height": "400px"}
+                                    #style={"height": "50vh"}
                                 ),
                                 dbc.Col(
                                     [
                                         html.B("Results"),
-                                        dcc.Markdown(id="md-nsample-results")
+                                        dbc.Spinner(id="nsample-results")
                                     ],
-                                    width=12,
-                                    style={"height": "400px"}
+                                    width=12
+                                    
                                 )                                
                             ]
                         ),
@@ -104,15 +107,17 @@ def update_dummy(_):
 @callback(
     Output("graph-nsample-base", "figure"),
     Output("graph-nsample-new", "figure"),
-    Output("md-nsample-results", "children"),
+    Output("nsample-results", "children"),
     Input("slider-nsample-victim", 'value'),
     Input("dropdown-nsample-attackers", 'value'),
-    Input("slider-nsample-packets", 'value')
+    Input("slider-nsample-packets", 'value'),
+    Input("slider-nsample-p", 'value')
 )
 def update_output(
     victim_node: int, 
     attackers: list[str],
-    packets: int
+    packets: int,
+    p
 ) -> Tuple[
     plotly.graph_objs.Figure,
     plotly.graph_objs.Figure,
@@ -137,7 +142,7 @@ def update_output(
     graph = global_state.GRAPH.copy()
     
     # Carry out the simulation.
-    result = simul_utils.simulate_transmissions(graph, victim_node, attackers, 0.5, packets)
+    result = simul_utils.simulate_transmissions(graph, victim_node, attackers, p, packets)
     
     # Color the copy of the figure based on the simulation results.
     fig = graph_utils.color_nodes_by_property(result.graph, fig, "times_used")
@@ -146,22 +151,26 @@ def update_output(
     fig_2 = graph_utils.rebuild_node_sampling_paths(result.graph, fig_2, victim_node)
     
     # Spit out the simulation results.
-    res = dedent(
+    df: pd.DataFrame = nx.to_pandas_edgelist(result.graph)
+    df = df.sort_values("times_marked", ascending=False)
+    
+    md_str = dedent(
         f"""
         - Number of packets sent: {result.packets_sent}
         - Total number of intermediate routers: {result.intermediate_routers}
         - Additional bytes of overhead: {result.nsample_overhead}
         
-        ---
-        
         The reconstructed graph for node appending can be viewed by clicking on
-        "Reconstructed path to attackers" on the left. Elements are colored
-        as follows:
-        - **Blue** is the victim node.
-        - **Red** are attacker nodes.
-        - **White** nodes are routers on at least one path to from an attacker to the victim.
-        - **Gray** nodes are routers not involved in routing attacker traffic.
+        "Reconstructed path to attackers" on the left. The reconstructed node
+        sampling table is below.
         """
     ).strip()
+    res_layout = [
+        dcc.Markdown(md_str),
+        dbc.Container(
+            dash.dash_table.DataTable(df.to_dict('records'), [{"name": i, "id": i} for i in df.columns], sort_action='native'), 
+            style={"height": "25vh", "overflow": "scroll"})
+    ]
     
-    return fig, fig_2, res
+    
+    return fig, fig_2, res_layout

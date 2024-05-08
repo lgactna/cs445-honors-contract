@@ -79,7 +79,7 @@ layout = html.Div(
                                 dbc.Col(
                                     [
                                         html.B("Results"),
-                                        dcc.Markdown(id="md-nappend-results")
+                                        dbc.Spinner(dcc.Markdown(id="md-nappend-results"))
                                     ],
                                     width=12,
                                     style={"height": "400px"}

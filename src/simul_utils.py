@@ -58,6 +58,7 @@ def initialize_graph(
     # - `times_used` is the number of packets that passed through this router.
     nx.set_node_attributes(G, 0, "times_marked")
     nx.set_node_attributes(G, 0, "times_used")
+    nx.set_edge_attributes(G, 0, "times_marked")
     nx.set_edge_attributes(G, 0, "times_used")
 
     return G
@@ -129,7 +130,7 @@ def simulate_transmissions(
         # all cases.
         saved_router: int | None = None
         
-        for idx, node in enumerate(path[0:-1], 0):
+        for idx, node in enumerate(path[1:-1], 0):
             # yes, all redundant, but a little nicer
             graph.nodes[node]["times_used"] += 1
             graph.edges[path[idx], path[idx+1]]["times_used"] += 1
@@ -149,6 +150,9 @@ def simulate_transmissions(
         # the victim, so there's no need to save it here.
         if saved_router is not None:
             graph.nodes[saved_router]["times_marked"] += 1
+            
+            path_idx = path.index(saved_router)
+            graph.edges[path[path_idx], path[path_idx+1]]["times_marked"] += 1
         
         # TODO: Because we won't have any weird cyclic routing, it will *never*
         # be the case that the saved distance d != the actual distance from a
