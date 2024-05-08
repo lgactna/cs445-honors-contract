@@ -151,7 +151,13 @@ def update_output(
     fig_2 = graph_utils.rebuild_node_sampling_paths(result.graph, fig_2, victim_node)
     
     # Spit out the simulation results.
-    df: pd.DataFrame = nx.to_pandas_edgelist(result.graph)
+    # FIXME: This is great for the next one! Not for this one, because we need
+    # just the nodes, not the edge properties.
+    # See https://stackoverflow.com/questions/35046087/make-networkx-node-attributes-into-pandas-dataframe-columns
+    # df: pd.DataFrame = nx.to_pandas_edgelist(result.graph)
+    df = pd.DataFrame.from_dict(dict(result.graph.nodes(data=True)), orient='index')
+    df['node_id'] = df.index
+    df = df[['node_id', 'times_marked']]
     df = df.sort_values("times_marked", ascending=False)
     
     md_str = dedent(
